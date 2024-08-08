@@ -15,7 +15,7 @@ const DISPLAY_CODE_REPLACE:string = "OBSTOANKICODEDISPLAY"
 
 const CLOZE_REGEXP:RegExp = /(?:(?<!{){(?:c?(\d+)[:|])?(?!{))((?:[^\n][\n]?)+?)(?:(?<!})}(?!}))/g
 
-const IMAGE_EXTS: string[] = [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".tiff"]
+const IMAGE_EXTS: string[] = [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".tiff",".webp"]
 const AUDIO_EXTS: string[] = [".wav", ".m4a", ".flac", ".mp3", ".wma", ".aac", ".webm"]
 
 const PARA_OPEN:string = "<p>"
@@ -93,25 +93,66 @@ export class FormatConverter {
 		return text
 	}
 
-	getAndFormatMedias(note_text: string): string {
-		if (!(this.file_cache.hasOwnProperty("embeds"))) {
+	// getAndFormatMedias(note_text: string): string {
+	// 	if (!(this.file_cache.hasOwnProperty("embeds"))) {
+	// 		return note_text
+	// 	}
+	// 	for (let embed of this.file_cache.embeds) {
+	// 		if (note_text.includes(embed.original)) {
+	// 			this.detectedMedia.add(embed.link)
+	// 			if (AUDIO_EXTS.includes(extname(embed.link))) {
+	// 				note_text = note_text.replace(new RegExp(c.escapeRegex(embed.original), "g"), "[sound:" + basename(embed.link) + "]")
+	// 			} else if (IMAGE_EXTS.includes(extname(embed.link))) {
+	// 				note_text = note_text.replace(
+	// 					new RegExp(c.escapeRegex(embed.original), "g"),
+	// 					'<img src="' + basename(embed.link) + '" alt="' + embed.displayText + '">'
+	// 				)
+	// 			} else {
+	// 				console.warn("Unsupported extension: ", extname(embed.link))
+	// 			}
+	// 		}
+	// 	}
+	// 	return note_text
+	// }
+	 getAndFormatMedias(note_text: string): string {
+		if (
+			!note_text.includes('.png') &&
+			!note_text.includes('.jpg') &&
+			!note_text.includes('.webp') &&
+			!note_text.includes('.mp3')
+		) {
+			// console.log("Keine Bilder gefunden");
+			return note_text;
+		}
+	
+		// console.log(note_text)
+		const matches = note_text.match(/\!\[\[(.*)\]\]/g);
+		if (!matches) {
 			return note_text
 		}
-		for (let embed of this.file_cache.embeds) {
-			if (note_text.includes(embed.original)) {
-				this.detectedMedia.add(embed.link)
-				if (AUDIO_EXTS.includes(extname(embed.link))) {
-					note_text = note_text.replace(new RegExp(c.escapeRegex(embed.original), "g"), "[sound:" + basename(embed.link) + "]")
-				} else if (IMAGE_EXTS.includes(extname(embed.link))) {
+	
+		matches.forEach(match => {
+			const original = match
+			const link = original.substring(3, original.length - 2);
+			const displayText = link
+	
+			if (note_text.includes(original)) {
+				this.detectedMedia.add(link)
+	
+				if (AUDIO_EXTS.includes(extname(link))) {
+					note_text = note_text.replace(new RegExp(c.escapeRegex(original), 'g'), '[sound:' + basename(link) + ']');
+				} else if (IMAGE_EXTS.includes(extname(link))) {
 					note_text = note_text.replace(
-						new RegExp(c.escapeRegex(embed.original), "g"),
-						'<img src="' + basename(embed.link) + '" alt="' + embed.displayText + '">'
-					)
+						new RegExp(c.escapeRegex(original), 'g'),
+						'<img src="' +basename(link) + '" alt="' + displayText + '">');
+					//console.log("Bild enthalten?", IMAGE_EXTS.includes(path.extname(link))); // DEBUG If Note contains img
+					// console.log("Note-Text", note_text); // DEBUG If Note contains img
 				} else {
-					console.warn("Unsupported extension: ", extname(embed.link))
+					console.warn('Unsupported extension: ', extname(link))
 				}
 			}
-		}
+		})
+	
 		return note_text
 	}
 
